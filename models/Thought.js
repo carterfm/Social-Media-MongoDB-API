@@ -23,6 +23,13 @@ const reactionSchema = new Schema(
             get: (created) => moment(created).format("MMMM Do YYYY, h:mm:ss a")
         }
 
+    },
+    {
+        toJSON: {
+            virtuals: true,
+            getters: true
+        },
+        id: false
     }
 );
 
