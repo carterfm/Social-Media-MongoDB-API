@@ -31,13 +31,25 @@ router.post('/', (req, res) => {
 router.put('/:userId', (req, res) => {
     User.findByIdAndUpdate(
         req.params.userId, 
-        { username: req.body.username, email: req.body.email}, 
-        {new: true}
+        { 
+            username: req.body.username, 
+            email: req.body.email
+        }, 
+        //Setting new to false because we're going to go through thoughts and updated all the thoughts associated with the old username so they have the new username instead
+        {new: false}
     )
         .then(updatedUser => {
-            !updatedUser
-            ? res.status(404).json({ message: 'No user with that ID' })
-            : res.json(updatedUser);  
+            if(!updatedUser) {
+                res.status(404).json({ message: 'No user with that ID' })
+            }
+            else {
+                Thought.updateMany(
+                    { username: updatedUser.username},
+                    { username: req.body.username }
+                )
+                    .then(updatedThoughts => res.json(updatedThoughts))
+                    .catch((err) => res.status(500).json(err));
+            }
         })
         .catch((err) => res.status(500).json(err));
 });
@@ -45,9 +57,14 @@ router.put('/:userId', (req, res) => {
 router.delete('/:userId', (req, res) => {
     User.findByIdAndDelete(req.params.userId)
         .then(deletedUser => {
-            !deletedUser
-            ? res.status(404).json({ message: 'No user with that ID' })
-            : res.json(deletedUser);  
+            //Deleting thoughts associated with the user as well if the user exists -- using username field in Thought model to achieve this
+            if (!deletedUser) {
+                res.status(404).json({ message: 'No user with that ID' });
+            } else {
+                Thought.deleteMany({username: deletedUser.username})
+                    .then(deletedThoughts => res.json(deletedThoughts))
+                    .catch((err) => res.status(500).json(err));
+            }
         })
         .catch((err) => res.status(500).json(err));
 });
@@ -55,24 +72,33 @@ router.delete('/:userId', (req, res) => {
 //Routes for adding and deleting friends
 // TODO: ask: should this be a two-way thing (i.e., if a adds b as a friend, b gets a as a friend as well?)
 router.post('/:userId/friends/:friendId', (req, res) => {
-    User.findByIdAndUpdate(
-        req.params.userId,
-        { $push: { friends: req.params.friendId }}, 
-        {new: true}
-    )
-    .then(updatedUser => {
-        !updatedUser
-        ? res.status(404).json({ message: 'No user with that ID' })
-        : res.json(updatedUser);  
-    })
-    .catch((err) => res.status(500).json(err));
+    //Only adding a friend if the friend is actually a user that exists in our database
+    User.findOne({ _id: req.params.friendId })
+        .then(friendtoAdd => {
+            if (!friendtoAdd) {
+                res.status(404).json({ message: 'No user with the given friend ID' });
+            } else {
+                User.findByIdAndUpdate(
+                    req.params.userId,
+                    { $addToSet: { friends: req.params.friendId }}, 
+                    { runValidators: true, new: true}
+                )
+                .then(updatedUser => {
+                    !updatedUser
+                    ? res.status(404).json({ message: 'No user with that ID' })
+                    : res.json(updatedUser);  
+                })
+                .catch((err) => res.status(500).json(err));
+            }
+        })
+        .catch((err) => res.status(500).json(err));
 });
 
 router.delete('/:userId/friends/:friendId', (req, res) => {
     User.findByIdAndUpdate(
         req.params.userId,
         { $pull: { friends: req.params.friendId }}, 
-        {new: true}
+        { runValidators: true, new: true}
     )
     .then(updatedUser => {
         !updatedUser
