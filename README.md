@@ -14,7 +14,7 @@
 
 A simple back-end framework for managing data for a hypothetical social media app. Built with MySQL MongoDB and Mongoose. This database has the following structure:
 
-###User:
+### User:
 
 * `username`
   * String
@@ -37,7 +37,7 @@ A simple back-end framework for managing data for a hypothetical social media ap
 * **virtual:** `friendCount`--retrieves the length of the user's `friends` array on query
 
 
-###Thought:
+### Thought:
 
 * `thoughtText`
   * String
@@ -65,7 +65,7 @@ Video Demonstration: [pt 1](https://youtu.be/yW3duWCz5pM), [pt 2](https://youtu.
 
 This backend features the following routes:
 
-###Users:
+### Users:
 
 * GET '/api/users': returns all users 
 
@@ -81,9 +81,7 @@ This backend features the following routes:
 
 * DELETE 'api/users/:userId/friends/:friendId': Remove a friend with given id from user with given id
 
-###Thoughts:
-
-**`/api/thoughts`**
+### Thoughts:
 
 * GET 'api/thoughts': returns all thoughts 
 
